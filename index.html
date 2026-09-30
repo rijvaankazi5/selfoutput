@@ -144,6 +144,10 @@
 <div id="toast" class="toast"></div>
 
 <script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycbxB-lHxxxACjQpdWQdZXQPYy01qO8R7O-4XirxS1DNkUkqU41WwE757KDYt_4gJXfI/exec";
+
+ 
 let materials = [];
 let byBarcode = {};
 let cart = [];
@@ -162,15 +166,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadMaterials() {
   setStatus('Loading material database...');
-  google.script.run
-    .withSuccessHandler(data => {
-      materials = data || [];
-      byBarcode = {};
-      materials.forEach(m => { if (m.barcode) byBarcode[String(m.barcode)] = m; });
-      setStatus(`${materials.length} material records loaded.`, true);
-    })
-    .withFailureHandler(err => setStatus(err.message || String(err), false))
-    .getMaterials();
+  apiGet({}).then(data => {
+    if (!data || !data.success) throw new Error(data?.message || 'Unable to load materials.');
+    materials = data.materials || [];
+    byBarcode = {};
+    materials.forEach(m => {
+      if (m.barcode) byBarcode[String(m.barcode).trim()] = normalizeMaterial(m);
+    });
+    setStatus(`${materials.length} material records loaded.`, true);
+  }).catch(err => setStatus(err.message || String(err), false));
+}
+
+function normalizeMaterial(m) {
+  return {
+    ...m,
+    nameEn: m.nameEn ?? m.materialEN ?? '',
+    nameCn: m.nameCn ?? m.materialCN ?? '',
+    stock: Number(m.stock ?? m.currentStock ?? 0),
+    currentStock: Number(m.currentStock ?? m.stock ?? 0)
+  };
+}
+
+function apiGet(params) {
+  return new Promise((resolve, reject) => {
+    const callbackName = '__apiCallback_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const query = new URLSearchParams({ ...params, callback: callbackName }).toString();
+    let timer;
+    const cleanup = () => {
+      script.remove();
+      delete window[callbackName];
+      clearTimeout(timer);
+    };
+    timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Google Sheet API timeout.'));
+    }, 15000);
+    window[callbackName] = data => {
+      cleanup();
+      resolve(data);
+    };
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('Google Sheet API connection failed.'));
+    };
+    script.src = API_URL + (API_URL.includes('?') ? '&' : '?') + query;
+    document.body.appendChild(script);
+  });
 }
 
 async function toggleScanner() {
@@ -284,32 +326,40 @@ async function stopScanner() {
 
 function focusBarcode() { $('barcode').focus(); }
 
-function addByBarcode() {
+async function addByBarcode() {
   const code = String($('barcode').value || '').trim();
   if (!code) {
     setStatus('Please scan or enter a barcode.', false);
     return;
   }
-  const material = byBarcode[code];
-  if (!material) {
-    setStatus(`Barcode not found: ${code}`, false);
-    return;
-  }
 
-  const existing = cart.find(x => x.barcode === material.barcode);
-  if (existing) {
-    existing.qty = Number(existing.qty) + 1;
-  } else {
-    cart.push({
-      ...material,
-      qty: 1,
-      uom: material.uom || 'EA'
-    });
-  }
+  setStatus('Searching material...');
+  try {
+    let material = byBarcode[code];
 
-  $('barcode').value = '';
-  setStatus(`${material.nameEn} added to cart.`, true);
-  renderCart();
+    if (!material) {
+      const data = await apiGet({ barcode: code });
+      if (!data || !data.success || !data.material) {
+        setStatus(`Barcode not found: ${code}`, false);
+        return;
+      }
+      material = normalizeMaterial(data.material);
+      byBarcode[code] = material;
+    }
+
+    const existing = cart.find(x => String(x.barcode) === code);
+    if (existing) {
+      existing.qty = Number(existing.qty) + 1;
+    } else {
+      cart.push({ ...material, qty: 1, uom: material.uom || 'EA' });
+    }
+
+    $('barcode').value = '';
+    setStatus(`${material.nameEn} added to cart.`, true);
+    renderCart();
+  } catch (err) {
+    setStatus(err.message || 'Unable to connect to Google Sheet.', false);
+  }
 }
 
 function renderCart() {
@@ -372,7 +422,7 @@ function removeItem(i) {
   renderCart();
 }
 
-function submitOutput() {
+async function submitOutput() {
   const receiver = $('receiver').value.trim();
   const date = $('date').value;
   const purpose = $('purpose').value.trim();
@@ -386,32 +436,43 @@ function submitOutput() {
   btn.textContent = 'Submitting...';
   document.body.classList.add('loading');
 
-  google.script.run
-    .withSuccessHandler(res => {
-      document.body.classList.remove('loading');
-      btn.textContent = 'Submit Output';
-      if (!res || !res.ok) return toast('Submission failed.');
-      $('successCard').style.display = 'block';
-      $('successNumber').textContent = res.outputNo;
-      $('successText').textContent = `${res.itemCount} material line(s) submitted successfully.`;
-      $('successCard').scrollIntoView({behavior:'smooth'});
-    })
-    .withFailureHandler(err => {
-      document.body.classList.remove('loading');
-      btn.textContent = 'Submit Output';
-      toast(err.message || String(err));
-    })
-    .submitOutput({
+  try {
+    const payload = {
+      action: 'submitOutput',
       receiver,
       date,
       purpose,
-      items: cart.map(x => ({
-        barcode:x.barcode, nameEn:x.nameEn, nameCn:x.nameCn,
-        qty:Number(x.qty), uom:x.uom, category:x.category,
-        warehouse:x.warehouse, location:x.location,
-        partNo:x.partNo, manufacturer:x.manufacturer
-      }))
-    });
+      items: JSON.stringify(cart.map(x => ({
+        barcode: x.barcode,
+        nameEn: x.nameEn,
+        nameCn: x.nameCn,
+        qty: Number(x.qty),
+        uom: x.uom,
+        category: x.category,
+        warehouse: x.warehouse,
+        location: x.location,
+        partNo: x.partNo,
+        manufacturer: x.manufacturer
+      })))
+    };
+
+    const res = await apiGet(payload);
+    if (!res || !res.ok) {
+      throw new Error(res?.message || 'Submission failed.');
+    }
+
+    $('successCard').style.display = 'block';
+    $('successNumber').textContent = res.outputNo;
+    $('successText').textContent =
+      `${res.itemCount} material line(s) submitted successfully.`;
+    $('successCard').scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    toast(err.message || String(err));
+  } finally {
+    document.body.classList.remove('loading');
+    btn.textContent = 'Submit Output';
+  }
 }
 
 function newOutput() {
