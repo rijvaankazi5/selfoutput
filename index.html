@@ -156,8 +156,16 @@ let scannerRunning = false;
 
 const $ = id => document.getElementById(id);
 
+function getLocalDate() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  $('date').value = new Date().toISOString().slice(0,10);
+  $('date').value = getLocalDate();
   $('barcode').addEventListener('keydown', e => {
     if (e.key === 'Enter') addByBarcode();
   });
@@ -479,7 +487,7 @@ function newOutput() {
   cart = [];
   $('receiver').value = '';
   $('purpose').value = '';
-  $('date').value = new Date().toISOString().slice(0,10);
+  $('date').value = getLocalDate();
   $('successCard').style.display = 'none';
   renderCart();
   loadMaterials();
