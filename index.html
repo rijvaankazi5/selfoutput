@@ -971,7 +971,7 @@ async function toggleScanner() {
   if (!window.Html5Qrcode) {
 
     setStatus(
-      "Scanner library load nahi hui. Internet check karein.",
+      "Scanner library Is Not Loading.",
       false
     );
 
@@ -1009,7 +1009,7 @@ async function toggleScanner() {
 
 
     setStatus(
-      "Camera permission mil gayi. Scanner starting...",
+      "Camera got. Scanner starting...",
       true
     );
 
@@ -1063,7 +1063,7 @@ async function toggleScanner() {
 
 
     setStatus(
-      "Camera active hai. Barcode ke saamne camera rakhein.",
+      "Camera active. Please Scan the Barcode.",
       true
     );
 
@@ -1077,7 +1077,7 @@ async function toggleScanner() {
 
 
     let message =
-      "Camera start nahi ho saka. ";
+      "Camera can not start. ";
 
 
     if (
@@ -1086,7 +1086,7 @@ async function toggleScanner() {
     ) {
 
       message +=
-        "Camera permission blocked hai. Browser settings me Camera → Allow karein.";
+        "Camera permission is blocked. Browser settings Camera → Allow.";
 
     }
 
@@ -1096,7 +1096,7 @@ async function toggleScanner() {
     ) {
 
       message +=
-        "Camera device nahi mila.";
+        "Camera device not found.";
 
     }
 
@@ -1106,7 +1106,7 @@ async function toggleScanner() {
     ) {
 
       message +=
-        "Camera kisi aur application me use ho raha hai.";
+        "Camera Using Another application.";
 
     }
 
@@ -1116,7 +1116,7 @@ async function toggleScanner() {
     ) {
 
       message +=
-        "Browser security ne camera access block kiya hai.";
+        "Browser security block camera access.";
 
     }
 
@@ -1837,36 +1837,38 @@ async function submitOutput() {
     // SUCCESS
     // --------------------------------------------------------
 
-    $("successCard")
-      .style
-      .display =
-      "block";
+// SUCCESS MESSAGE
+$("successCard").style.display = "block";
+
+$("successNumber").textContent = res.outputNo;
+
+$("successText").textContent =
+  `${res.itemCount} material line(s) submitted successfully.`;
+
+$("successCard").scrollIntoView({
+  behavior: "smooth"
+});
 
 
-    $("successNumber")
-      .textContent =
-      res.outputNo;
+// ============================================================
+// CLEAR FORM AFTER SUCCESS
+// ============================================================
+
+cart = [];
+
+$("receiver").value = "";
+$("purpose").value = "";
+$("barcode").value = "";
+$("date").value = getLocalDate();
+
+$("outputPreview").textContent =
+  "Next output will be generated on submit";
+
+renderCart();
 
 
-    $("successText")
-      .textContent =
-      `${res.itemCount} material line(s) submitted successfully.`;
-
-
-    $("outputPreview")
-      .textContent =
-      `Last output: ${res.outputNo}`;
-
-
-    $("successCard")
-      .scrollIntoView({
-        behavior:
-          "smooth"
-      });
-
-
-    // Refresh material stock
-    loadMaterials();
+// Reload latest stock from Database
+loadMaterials();
 
 
   } catch (err) {
