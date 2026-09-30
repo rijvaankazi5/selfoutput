@@ -457,7 +457,7 @@ async function submitOutput() {
     };
 
     const res = await apiGet(payload);
-    if (!res || !res.ok) {
+    if (!res || !res.success) {
       throw new Error(res?.message || 'Submission failed.');
     }
 
