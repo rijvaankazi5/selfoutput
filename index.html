@@ -1,522 +1,2071 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
   <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f172a">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#0f172a"
+  >
+
   <title>Warehouse Material Output</title>
 
-  <!-- Camera barcode scanner. -->
+
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
+
   <style>
+
     :root {
-      --bg:#f1f5f9; --card:#fff; --text:#0f172a; --muted:#64748b;
-      --primary:#0f172a; --accent:#2563eb; --danger:#dc2626; --success:#15803d;
-      --border:#e2e8f0; --soft:#f8fafc;
+      --bg:#f1f5f9;
+      --card:#fff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --primary:#0f172a;
+      --accent:#2563eb;
+      --danger:#dc2626;
+      --success:#15803d;
+      --border:#e2e8f0;
+      --soft:#f8fafc;
     }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
-    .app { max-width:900px; margin:auto; padding:14px; }
-    .topbar { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:18px; padding:18px; margin-bottom:14px; box-shadow:0 10px 30px rgba(15,23,42,.12); }
-    .topbar h1 { margin:0 0 4px; font-size:22px; }
-    .topbar p { margin:0; color:#cbd5e1; font-size:13px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; margin-bottom:14px; box-shadow:0 5px 18px rgba(15,23,42,.05); }
-    label { display:block; font-size:12px; font-weight:700; color:#475569; margin:0 0 6px; }
-    input, select, textarea { width:100%; border:1px solid #cbd5e1; border-radius:12px; padding:12px 13px; font-size:16px; outline:none; background:#fff; color:var(--text); }
-    input:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .field { margin-bottom:12px; }
-    .scanner-box { display:none; border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-top:12px; background:#000; }
-    #reader { width:100%; }
-    .scanner-actions { display:flex; gap:8px; margin-top:10px; }
-    button { border:0; border-radius:12px; padding:12px 15px; font-weight:800; font-size:14px; cursor:pointer; }
-    .btn-primary { background:var(--accent); color:#fff; }
-    .btn-dark { background:var(--primary); color:#fff; }
-    .btn-light { background:#e2e8f0; color:#0f172a; }
-    .btn-danger { background:#fee2e2; color:#991b1b; }
-    .scan-row { display:grid; grid-template-columns:1fr auto; gap:8px; }
-    .status { margin-top:9px; font-size:13px; color:var(--muted); min-height:18px; }
-    .status.ok { color:var(--success); font-weight:700; }
-    .status.err { color:var(--danger); font-weight:700; }
-    .output-pill { display:inline-flex; align-items:center; gap:8px; background:#eff6ff; color:#1d4ed8; padding:8px 11px; border-radius:999px; font-weight:800; font-size:13px; }
-    .cart-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
-    .cart-head h2 { margin:0; font-size:18px; }
-    .cart-empty { padding:22px 10px; text-align:center; color:var(--muted); border:1px dashed #cbd5e1; border-radius:14px; }
-    .item { border:1px solid var(--border); border-radius:15px; padding:12px; margin-bottom:10px; background:#fff; }
-    .item-title { font-weight:800; font-size:15px; line-height:1.35; }
-    .item-sub { color:var(--muted); font-size:12px; margin-top:4px; }
-    .item-meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-    .tag { background:var(--soft); border:1px solid var(--border); padding:5px 7px; border-radius:8px; font-size:11px; color:#475569; }
-    .item-controls { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-top:10px; align-items:end; }
-    .item-controls button { height:45px; }
-    .summary { display:flex; justify-content:space-between; align-items:center; padding-top:8px; font-size:14px; }
-    .submit { width:100%; padding:15px; font-size:16px; margin-top:10px; }
-    .hidden { display:none !important; }
-    .loading { opacity:.65; pointer-events:none; }
-    .toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0f172a; color:#fff; padding:12px 15px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.2); display:none; z-index:20; max-width:90%; text-align:center; }
-    .success-card { display:none; text-align:center; }
-    .success-card h2 { color:var(--success); margin:4px 0 6px; }
-    .success-number { font-size:34px; font-weight:900; margin:8px 0 16px; }
+
+    * {
+      box-sizing:border-box;
+    }
+
+    body {
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    .app {
+      max-width:900px;
+      margin:auto;
+      padding:14px;
+    }
+
+    .topbar {
+      background:linear-gradient(135deg,#0f172a,#1e293b);
+      color:#fff;
+      border-radius:18px;
+      padding:18px;
+      margin-bottom:14px;
+      box-shadow:0 10px 30px rgba(15,23,42,.12);
+    }
+
+    .topbar h1 {
+      margin:0 0 4px;
+      font-size:22px;
+    }
+
+    .topbar p {
+      margin:0;
+      color:#cbd5e1;
+      font-size:13px;
+    }
+
+    .card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px;
+      margin-bottom:14px;
+      box-shadow:0 5px 18px rgba(15,23,42,.05);
+    }
+
+    label {
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      color:#475569;
+      margin:0 0 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width:100%;
+      border:1px solid #cbd5e1;
+      border-radius:12px;
+      padding:12px 13px;
+      font-size:16px;
+      outline:none;
+      background:#fff;
+      color:var(--text);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(37,99,235,.12);
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .field {
+      margin-bottom:12px;
+    }
+
+    .scanner-box {
+      display:none;
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+      margin-top:12px;
+      background:#000;
+    }
+
+    #reader {
+      width:100%;
+    }
+
+    .scanner-actions {
+      display:flex;
+      gap:8px;
+      margin-top:10px;
+      padding:10px;
+    }
+
+    button {
+      border:0;
+      border-radius:12px;
+      padding:12px 15px;
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+    }
+
+    .btn-primary {
+      background:var(--accent);
+      color:#fff;
+    }
+
+    .btn-dark {
+      background:var(--primary);
+      color:#fff;
+    }
+
+    .btn-light {
+      background:#e2e8f0;
+      color:#0f172a;
+    }
+
+    .btn-danger {
+      background:#fee2e2;
+      color:#991b1b;
+    }
+
+    .scan-row {
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:8px;
+    }
+
+    .status {
+      margin-top:9px;
+      font-size:13px;
+      color:var(--muted);
+      min-height:18px;
+    }
+
+    .status.ok {
+      color:var(--success);
+      font-weight:700;
+    }
+
+    .status.err {
+      color:var(--danger);
+      font-weight:700;
+    }
+
+    .output-pill {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      padding:8px 11px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:13px;
+    }
+
+    .cart-head {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .cart-head h2 {
+      margin:0;
+      font-size:18px;
+    }
+
+    .cart-empty {
+      padding:22px 10px;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed #cbd5e1;
+      border-radius:14px;
+    }
+
+    .item {
+      border:1px solid var(--border);
+      border-radius:15px;
+      padding:12px;
+      margin-bottom:10px;
+      background:#fff;
+    }
+
+    .item-title {
+      font-weight:800;
+      font-size:15px;
+      line-height:1.35;
+    }
+
+    .item-sub {
+      color:var(--muted);
+      font-size:12px;
+      margin-top:4px;
+    }
+
+    .item-meta {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:8px;
+    }
+
+    .tag {
+      background:var(--soft);
+      border:1px solid var(--border);
+      padding:5px 7px;
+      border-radius:8px;
+      font-size:11px;
+      color:#475569;
+    }
+
+    .item-controls {
+      display:grid;
+      grid-template-columns:1fr 1fr auto;
+      gap:8px;
+      margin-top:10px;
+      align-items:end;
+    }
+
+    .item-controls button {
+      height:45px;
+    }
+
+    .summary {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding-top:8px;
+      font-size:14px;
+    }
+
+    .submit {
+      width:100%;
+      padding:15px;
+      font-size:16px;
+      margin-top:10px;
+    }
+
+    .loading {
+      opacity:.65;
+      pointer-events:none;
+    }
+
+    .toast {
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:#0f172a;
+      color:#fff;
+      padding:12px 15px;
+      border-radius:12px;
+      box-shadow:0 10px 25px rgba(0,0,0,.2);
+      display:none;
+      z-index:20;
+      max-width:90%;
+      text-align:center;
+    }
+
+    .success-card {
+      display:none;
+      text-align:center;
+    }
+
+    .success-card h2 {
+      color:var(--success);
+      margin:4px 0 6px;
+    }
+
+    .success-number {
+      font-size:34px;
+      font-weight:900;
+      margin:8px 0 16px;
+    }
+
     @media (max-width:600px) {
-      .app { padding:10px; }
-      .grid { grid-template-columns:1fr; gap:0; }
-      .topbar { border-radius:15px; }
-      .card { border-radius:15px; padding:13px; }
-      .scan-row { grid-template-columns:1fr; }
-      .scanner-actions { display:grid; grid-template-columns:1fr 1fr; }
-      .item-controls { grid-template-columns:1fr 1fr; }
-      .item-controls button { grid-column:1 / -1; }
+
+      .app {
+        padding:10px;
+      }
+
+      .grid {
+        grid-template-columns:1fr;
+        gap:0;
+      }
+
+      .topbar {
+        border-radius:15px;
+      }
+
+      .card {
+        border-radius:15px;
+        padding:13px;
+      }
+
+      .scan-row {
+        grid-template-columns:1fr;
+      }
+
+      .scanner-actions {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+      }
+
+      .item-controls {
+        grid-template-columns:1fr 1fr;
+      }
+
+      .item-controls button {
+        grid-column:1 / -1;
+      }
     }
+
   </style>
+
 </head>
 
+
 <body>
+
 <div class="app">
+
+
   <header class="topbar">
-    <h1>Warehouse Material Output</h1>
-    <p>Scan barcode → add material → enter quantity → submit output</p>
+
+    <h1>
+      Warehouse Material Output
+    </h1>
+
+    <p>
+      Scan barcode → add material → enter quantity → submit output
+    </p>
+
   </header>
 
+
+  <!-- ===================================================== -->
+  <!-- BASIC INFORMATION -->
+  <!-- ===================================================== -->
+
   <section class="card">
+
     <div class="field">
-      <label>Output Number</label>
-      <div class="output-pill" id="outputPreview">Next output will be generated on submit</div>
+
+      <label>
+        Output Number
+      </label>
+
+      <div
+        class="output-pill"
+        id="outputPreview"
+      >
+        Next output will be generated on submit
+      </div>
+
     </div>
+
 
     <div class="grid">
+
       <div class="field">
-        <label for="receiver">Receiver Name *</label>
-        <input id="receiver" placeholder="Enter receiver name" autocomplete="name">
+
+        <label for="receiver">
+          Receiver Name *
+        </label>
+
+        <input
+          id="receiver"
+          placeholder="Enter receiver name"
+          autocomplete="name"
+        >
+
       </div>
+
+
       <div class="field">
-        <label for="date">Date *</label>
-        <input id="date" type="date">
+
+        <label for="date">
+          Date *
+        </label>
+
+        <input
+          id="date"
+          type="date"
+        >
+
       </div>
+
     </div>
 
+
     <div class="field">
-      <label for="purpose">Purpose *</label>
-      <textarea id="purpose" rows="2" placeholder="e.g. Rig maintenance / Well job / Workshop"></textarea>
+
+      <label for="purpose">
+        Purpose *
+      </label>
+
+      <textarea
+        id="purpose"
+        rows="2"
+        placeholder="e.g. Rig maintenance / Well job / Workshop"
+      ></textarea>
+
     </div>
+
   </section>
 
+
+
+  <!-- ===================================================== -->
+  <!-- BARCODE -->
+  <!-- ===================================================== -->
+
   <section class="card">
+
     <div class="field">
-      <label>Barcode</label>
+
+      <label>
+        Barcode
+      </label>
+
+
       <div class="scan-row">
-        <input id="barcode" inputmode="numeric" placeholder="Scan or enter barcode" autocomplete="off">
-        <button class="btn-primary" onclick="toggleScanner()">📷 Scan</button>
+
+        <input
+          id="barcode"
+          inputmode="numeric"
+          placeholder="Scan or enter barcode"
+          autocomplete="off"
+        >
+
+
+        <button
+          class="btn-primary"
+          onclick="toggleScanner()"
+        >
+          📷 Scan
+        </button>
+
       </div>
-      <div id="scannerBox" class="scanner-box">
+
+
+      <div
+        id="scannerBox"
+        class="scanner-box"
+      >
+
         <div id="reader"></div>
+
+
         <div class="scanner-actions">
-          <button class="btn-light" onclick="stopScanner()">Close Scanner</button>
-          <button class="btn-dark" onclick="focusBarcode()">Keyboard Input</button>
+
+          <button
+            class="btn-light"
+            onclick="stopScanner()"
+          >
+            Close Scanner
+          </button>
+
+
+          <button
+            class="btn-dark"
+            onclick="focusBarcode()"
+          >
+            Keyboard Input
+          </button>
+
         </div>
+
       </div>
-      <div id="scanStatus" class="status"></div>
+
+
+      <div
+        id="scanStatus"
+        class="status"
+      ></div>
+
     </div>
-    <button class="btn-dark" style="width:100%" onclick="addByBarcode()">＋ Add Material</button>
+
+
+    <button
+      class="btn-dark"
+      style="width:100%"
+      onclick="addByBarcode()"
+    >
+      ＋ Add Material
+    </button>
+
   </section>
+
+
+
+  <!-- ===================================================== -->
+  <!-- CART -->
+  <!-- ===================================================== -->
 
   <section class="card">
+
     <div class="cart-head">
-      <h2>Output Cart</h2>
-      <span id="cartCount" class="output-pill">0 items</span>
+
+      <h2>
+        Output Cart
+      </h2>
+
+      <span
+        id="cartCount"
+        class="output-pill"
+      >
+        0 items
+      </span>
+
     </div>
+
+
     <div id="cart"></div>
+
+
     <div class="summary">
-      <strong>Total Quantity</strong>
-      <strong id="totalQty">0</strong>
+
+      <strong>
+        Total Quantity
+      </strong>
+
+      <strong id="totalQty">
+        0
+      </strong>
+
     </div>
-    <button id="submitBtn" class="btn-primary submit" onclick="submitOutput()">Submit Output</button>
+
+
+    <button
+      id="submitBtn"
+      class="btn-primary submit"
+      onclick="submitOutput()"
+    >
+      Submit Output
+    </button>
+
   </section>
 
-  <section id="successCard" class="card success-card">
-    <h2>Output Submitted</h2>
-    <div class="success-number" id="successNumber"></div>
+
+
+  <!-- ===================================================== -->
+  <!-- SUCCESS -->
+  <!-- ===================================================== -->
+
+  <section
+    id="successCard"
+    class="card success-card"
+  >
+
+    <h2>
+      Output Submitted
+    </h2>
+
+
+    <div
+      class="success-number"
+      id="successNumber"
+    ></div>
+
+
     <p id="successText"></p>
-    <button class="btn-dark" onclick="newOutput()">Create New Output</button>
+
+
+    <button
+      class="btn-dark"
+      onclick="newOutput()"
+    >
+      Create New Output
+    </button>
+
   </section>
+
 </div>
 
-<div id="toast" class="toast"></div>
+
+<div
+  id="toast"
+  class="toast"
+></div>
+
+
 
 <script>
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxB-lHxxxACjQpdWQdZXQPYy01qO8R7O-4XirxS1DNkUkqU41WwE757KDYt_4gJXfI/exec";
 
- 
+// ============================================================
+// IMPORTANT
+// ============================================================
+
+// Apna CURRENT deployed Apps Script /exec URL yahan paste karo.
+// Example:
+// https://script.google.com/macros/s/XXXXXXXXXXXX/exec
+
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbxB-lHxxxACjQpdWQdZXQPYy01qO8R7O-4XirxS1DNkUkqU41WwE757KDYt_4gJXfI/exec";
+
+
+// ============================================================
+// VARIABLES
+// ============================================================
+
 let materials = [];
+
 let byBarcode = {};
+
 let cart = [];
+
 let scanner = null;
+
 let scannerRunning = false;
 
-const $ = id => document.getElementById(id);
+
+
+// ============================================================
+// SHORT DOM FUNCTION
+// ============================================================
+
+const $ = id =>
+  document.getElementById(id);
+
+
+
+// ============================================================
+// LOCAL DATE
+// ============================================================
 
 function getLocalDate() {
+
   const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+
+  const y =
+    d.getFullYear();
+
+  const m =
+    String(
+      d.getMonth() + 1
+    ).padStart(2, "0");
+
+  const day =
+    String(
+      d.getDate()
+    ).padStart(2, "0");
+
   return `${y}-${m}-${day}`;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  $('date').value = getLocalDate();
-  $('barcode').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addByBarcode();
-  });
-  loadMaterials();
-});
+
+
+// ============================================================
+// PAGE LOAD
+// ============================================================
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    $("date").value =
+      getLocalDate();
+
+
+    $("barcode").addEventListener(
+      "keydown",
+      e => {
+
+        if (e.key === "Enter") {
+
+          e.preventDefault();
+
+          addByBarcode();
+        }
+      }
+    );
+
+
+    renderCart();
+
+    loadMaterials();
+
+  }
+);
+
+
+
+// ============================================================
+// LOAD MATERIALS
+// ============================================================
 
 function loadMaterials() {
-  setStatus('Loading material database...');
-  apiGet({}).then(data => {
-    if (!data || !data.success) throw new Error(data?.message || 'Unable to load materials.');
-    materials = data.materials || [];
-    byBarcode = {};
-    materials.forEach(m => {
-      if (m.barcode) byBarcode[String(m.barcode).trim()] = normalizeMaterial(m);
+
+  setStatus(
+    "Loading material database..."
+  );
+
+
+  apiGet({})
+
+    .then(data => {
+
+      if (
+        !data ||
+        !data.success
+      ) {
+
+        throw new Error(
+          data?.message ||
+          "Unable to load materials."
+        );
+      }
+
+
+      materials =
+        data.materials || [];
+
+
+      byBarcode = {};
+
+
+      materials.forEach(m => {
+
+        if (m.barcode) {
+
+          byBarcode[
+            String(m.barcode).trim()
+          ] =
+            normalizeMaterial(m);
+        }
+
+      });
+
+
+      setStatus(
+        `${materials.length} material records loaded.`,
+        true
+      );
+
+    })
+
+    .catch(err => {
+
+      setStatus(
+        err.message ||
+        String(err),
+        false
+      );
+
     });
-    setStatus(`${materials.length} material records loaded.`, true);
-  }).catch(err => setStatus(err.message || String(err), false));
 }
 
+
+
+// ============================================================
+// NORMALIZE MATERIAL
+// ============================================================
+
 function normalizeMaterial(m) {
+
   return {
+
     ...m,
-    nameEn: m.nameEn ?? m.materialEN ?? '',
-    nameCn: m.nameCn ?? m.materialCN ?? '',
-    stock: Number(m.stock ?? m.currentStock ?? 0),
-    currentStock: Number(m.currentStock ?? m.stock ?? 0)
+
+    nameEn:
+      m.nameEn ??
+      m.materialEN ??
+      "",
+
+    nameCn:
+      m.nameCn ??
+      m.materialCN ??
+      "",
+
+    stock:
+      Number(
+        m.stock ??
+        m.currentStock ??
+        0
+      ),
+
+    currentStock:
+      Number(
+        m.currentStock ??
+        m.stock ??
+        0
+      )
+
   };
 }
 
+
+
+// ============================================================
+// API GET / JSONP
+// ============================================================
+
 function apiGet(params) {
-  return new Promise((resolve, reject) => {
-    const callbackName = '__apiCallback_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    const script = document.createElement('script');
-    const query = new URLSearchParams({ ...params, callback: callbackName }).toString();
-    let timer;
-    const cleanup = () => {
-      script.remove();
-      delete window[callbackName];
-      clearTimeout(timer);
-    };
-    timer = setTimeout(() => {
-      cleanup();
-      reject(new Error('Google Sheet API timeout.'));
-    }, 15000);
-    window[callbackName] = data => {
-      cleanup();
-      resolve(data);
-    };
-    script.onerror = () => {
-      cleanup();
-      reject(new Error('Google Sheet API connection failed.'));
-    };
-    script.src = API_URL + (API_URL.includes('?') ? '&' : '?') + query;
-    document.body.appendChild(script);
-  });
+
+  return new Promise(
+    (resolve, reject) => {
+
+      const callbackName =
+        "__apiCallback_" +
+        Date.now() +
+        "_" +
+        Math.random()
+          .toString(36)
+          .slice(2);
+
+
+      const script =
+        document.createElement(
+          "script"
+        );
+
+
+      const query =
+        new URLSearchParams({
+
+          ...params,
+
+          callback:
+            callbackName
+
+        }).toString();
+
+
+      let timer;
+
+
+      const cleanup = () => {
+
+        script.remove();
+
+        delete window[
+          callbackName
+        ];
+
+        clearTimeout(timer);
+
+      };
+
+
+      timer =
+        setTimeout(() => {
+
+          cleanup();
+
+          reject(
+            new Error(
+              "Google Sheet API timeout."
+            )
+          );
+
+        }, 20000);
+
+
+      window[
+        callbackName
+      ] = data => {
+
+        cleanup();
+
+        resolve(data);
+
+      };
+
+
+      script.onerror = () => {
+
+        cleanup();
+
+        reject(
+          new Error(
+            "Google Sheet API connection failed."
+          )
+        );
+
+      };
+
+
+      script.src =
+        API_URL +
+        (
+          API_URL.includes("?")
+            ? "&"
+            : "?"
+        ) +
+        query;
+
+
+      document.body.appendChild(
+        script
+      );
+
+    }
+  );
 }
 
+
+
+// ============================================================
+// SCANNER
+// ============================================================
+
 async function toggleScanner() {
+
   if (scannerRunning) {
-    stopScanner();
+
+    await stopScanner();
+
     return;
   }
 
-  $('scannerBox').style.display = 'block';
+
+  $("scannerBox").style.display =
+    "block";
+
 
   if (!window.Html5Qrcode) {
-    setStatus('Scanner library load nahi hui. Internet check karein.', false);
+
+    setStatus(
+      "Scanner library load nahi hui. Internet check karein.",
+      false
+    );
+
     return;
   }
 
+
   try {
-    setStatus('Camera permission checking...');
 
-    // Explicitly request camera access
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: 'environment' }
-      },
-      audio: false
-    });
+    setStatus(
+      "Camera permission checking..."
+    );
 
-    // Permission mil gayi — immediately release test stream
-    stream.getTracks().forEach(track => track.stop());
 
-    setStatus('Camera permission mil gayi. Scanner starting...', true);
+    const stream =
+      await navigator.mediaDevices
+        .getUserMedia({
 
-    scanner = new Html5Qrcode('reader');
+          video: {
+            facingMode: {
+              ideal: "environment"
+            }
+          },
+
+          audio: false
+
+        });
+
+
+    stream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
+
+    setStatus(
+      "Camera permission mil gayi. Scanner starting...",
+      true
+    );
+
+
+    scanner =
+      new Html5Qrcode(
+        "reader"
+      );
+
 
     await scanner.start(
+
       {
-        facingMode: 'environment'
+        facingMode:
+          "environment"
       },
+
       {
         fps: 10,
+
         qrbox: {
           width: 280,
           height: 140
         },
+
         aspectRatio: 1.777
+
       },
+
       decodedText => {
-        $('barcode').value = decodedText;
+
+        $("barcode").value =
+          decodedText;
+
         stopScanner();
+
         addByBarcode();
+
       },
+
       errorMessage => {
-        // Normal scanning errors ignore karna hai
+
+        // Ignore normal scan errors
+
       }
+
     );
+
 
     scannerRunning = true;
 
+
     setStatus(
-      'Camera active hai. Barcode ke saamne camera rakhein.',
+      "Camera active hai. Barcode ke saamne camera rakhein.",
       true
     );
 
+
   } catch (err) {
 
-    console.error('Camera error:', err);
+    console.error(
+      "Camera error:",
+      err
+    );
 
-    let message = 'Camera start nahi ho saka. ';
 
-    if (err.name === 'NotAllowedError') {
+    let message =
+      "Camera start nahi ho saka. ";
+
+
+    if (
+      err.name ===
+      "NotAllowedError"
+    ) {
+
       message +=
-        'Camera permission blocked hai. Browser settings me Camera → Allow karein.';
-    } 
-    else if (err.name === 'NotFoundError') {
-      message +=
-        'Camera device nahi mila.';
-    } 
-    else if (err.name === 'NotReadableError') {
-      message +=
-        'Camera kisi aur application me use ho raha hai.';
-    } 
-    else if (err.name === 'SecurityError') {
-      message +=
-        'Browser security ne camera access block kiya hai.';
-    } 
-    else {
-      message += err.name + ': ' + (err.message || 'Unknown error');
+        "Camera permission blocked hai. Browser settings me Camera → Allow karein.";
+
     }
 
-    setStatus(message, false);
+    else if (
+      err.name ===
+      "NotFoundError"
+    ) {
+
+      message +=
+        "Camera device nahi mila.";
+
+    }
+
+    else if (
+      err.name ===
+      "NotReadableError"
+    ) {
+
+      message +=
+        "Camera kisi aur application me use ho raha hai.";
+
+    }
+
+    else if (
+      err.name ===
+      "SecurityError"
+    ) {
+
+      message +=
+        "Browser security ne camera access block kiya hai.";
+
+    }
+
+    else {
+
+      message +=
+        err.name +
+        ": " +
+        (
+          err.message ||
+          "Unknown error"
+        );
+    }
+
+
+    setStatus(
+      message,
+      false
+    );
+
   }
 }
+
+
+
+// ============================================================
+// STOP SCANNER
+// ============================================================
+
 async function stopScanner() {
 
   try {
+
     if (scanner) {
 
       if (scannerRunning) {
+
         await scanner.stop();
+
       }
+
 
       scanner.clear();
+
       scanner = null;
+
       scannerRunning = false;
+
     }
+
   } catch (err) {
-    console.log('Scanner stop error:', err);
+
+    console.log(
+      "Scanner stop error:",
+      err
+    );
+
   }
 
-  $('scannerBox').style.display = 'none';
+
+  $("scannerBox").style.display =
+    "none";
 }
 
-function focusBarcode() { $('barcode').focus(); }
+
+
+// ============================================================
+// FOCUS BARCODE
+// ============================================================
+
+function focusBarcode() {
+
+  $("barcode").focus();
+
+}
+
+
+
+// ============================================================
+// ADD BY BARCODE
+// ============================================================
 
 async function addByBarcode() {
-  const code = String($('barcode').value || '').trim();
+
+  const code =
+    String(
+      $("barcode").value || ""
+    ).trim();
+
+
   if (!code) {
-    setStatus('Please scan or enter a barcode.', false);
+
+    setStatus(
+      "Please scan or enter a barcode.",
+      false
+    );
+
     return;
   }
 
-  setStatus('Searching material...');
-  try {
-    let material = byBarcode[code];
 
+  setStatus(
+    "Searching material..."
+  );
+
+
+  try {
+
+    let material =
+      byBarcode[code];
+
+
+    // If not loaded locally,
+    // search Google Sheet
     if (!material) {
-      const data = await apiGet({ barcode: code });
-      if (!data || !data.success || !data.material) {
-        setStatus(`Barcode not found: ${code}`, false);
+
+      const data =
+        await apiGet({
+          barcode: code
+        });
+
+
+      if (
+        !data ||
+        !data.success ||
+        !data.material
+      ) {
+
+        setStatus(
+          `Barcode not found: ${code}`,
+          false
+        );
+
         return;
       }
-      material = normalizeMaterial(data.material);
-      byBarcode[code] = material;
+
+
+      material =
+        normalizeMaterial(
+          data.material
+        );
+
+
+      byBarcode[code] =
+        material;
+
     }
 
-    const existing = cart.find(x => String(x.barcode) === code);
+
+    // --------------------------------------------------------
+    // EXISTING ITEM
+    // --------------------------------------------------------
+
+    const existing =
+      cart.find(
+        x =>
+          String(x.barcode) ===
+          code
+      );
+
+
     if (existing) {
-      existing.qty = Number(existing.qty) + 1;
-    } else {
-      cart.push({ ...material, qty: 1, uom: material.uom || 'EA' });
+
+      const newQty =
+        Number(existing.qty) + 1;
+
+
+      if (
+        newQty >
+        Number(existing.stock)
+      ) {
+
+        setStatus(
+          `Stock limit reached. Available: ${existing.stock} ${existing.uom || "EA"}`,
+          false
+        );
+
+        return;
+      }
+
+
+      existing.qty =
+        newQty;
+
     }
 
-    $('barcode').value = '';
-    setStatus(`${material.nameEn} added to cart.`, true);
+    // --------------------------------------------------------
+    // NEW ITEM
+    // --------------------------------------------------------
+
+    else {
+
+      if (
+        Number(material.stock) <= 0
+      ) {
+
+        setStatus(
+          `${material.nameEn} - Stock is zero.`,
+          false
+        );
+
+        return;
+      }
+
+
+      cart.push({
+
+        ...material,
+
+        qty: 1,
+
+        uom:
+          material.uom ||
+          "EA"
+
+      });
+
+    }
+
+
+    $("barcode").value =
+      "";
+
+
+    setStatus(
+      `${material.nameEn} added to cart.`,
+      true
+    );
+
+
     renderCart();
+
+
   } catch (err) {
-    setStatus(err.message || 'Unable to connect to Google Sheet.', false);
+
+    setStatus(
+      err.message ||
+      "Unable to connect to Google Sheet.",
+      false
+    );
+
   }
 }
 
+
+
+// ============================================================
+// RENDER CART
+// ============================================================
+
 function renderCart() {
-  $('cartCount').textContent = `${cart.length} item${cart.length === 1 ? '' : 's'}`;
+
+  $("cartCount").textContent =
+    `${cart.length} item${
+      cart.length === 1
+        ? ""
+        : "s"
+    }`;
+
 
   if (!cart.length) {
-    $('cart').innerHTML = '<div class="cart-empty">No materials added yet.<br>Scan a barcode to start.</div>';
-    $('totalQty').textContent = '0';
+
+    $("cart").innerHTML =
+      `
+      <div class="cart-empty">
+        No materials added yet.<br>
+        Scan a barcode to start.
+      </div>
+      `;
+
+
+    $("totalQty").textContent =
+      "0";
+
+
     return;
   }
 
-  $('cart').innerHTML = cart.map((item, index) => `
-    <div class="item">
-      <div class="item-title">${esc(item.nameEn)}</div>
-      <div class="item-sub">${esc(item.nameCn || '')}</div>
-      <div class="item-meta">
-        <span class="tag">Barcode: ${esc(item.barcode)}</span>
-        <span class="tag">Stock: ${fmt(item.stock)}</span>
-        <span class="tag">${esc(item.category)}</span>
-        <span class="tag">Loc: ${esc(item.location)}</span>
-      </div>
-      <div class="item-controls">
-        <div>
-          <label>Qty</label>
-          <input type="number" min="0.001" step="any" value="${item.qty}" onchange="changeQty(${index}, this.value)">
-        </div>
-        <div>
-          <label>UOM</label>
-          <select onchange="changeUom(${index}, this.value)">
-            ${uomOptions(item.uom)}
-          </select>
-        </div>
-        <button class="btn-danger" onclick="removeItem(${index})">Remove</button>
-      </div>
-    </div>
-  `).join('');
 
-  $('totalQty').textContent = fmt(cart.reduce((s,x) => s + Number(x.qty || 0), 0));
+  $("cart").innerHTML =
+    cart.map(
+      (item, index) => `
+
+      <div class="item">
+
+        <div class="item-title">
+          ${esc(item.nameEn)}
+        </div>
+
+        <div class="item-sub">
+          ${esc(item.nameCn || "")}
+        </div>
+
+
+        <div class="item-meta">
+
+          <span class="tag">
+            Barcode:
+            ${esc(item.barcode)}
+          </span>
+
+          <span class="tag">
+            Stock:
+            ${fmt(item.stock)}
+          </span>
+
+          <span class="tag">
+            ${esc(item.category)}
+          </span>
+
+          <span class="tag">
+            Loc:
+            ${esc(item.location)}
+          </span>
+
+        </div>
+
+
+        <div class="item-controls">
+
+
+          <div>
+
+            <label>
+              Qty
+            </label>
+
+            <input
+              type="number"
+              min="0.001"
+              step="any"
+              value="${item.qty}"
+              onchange="changeQty(${index}, this.value)"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              UOM
+            </label>
+
+            <select
+              onchange="changeUom(${index}, this.value)"
+            >
+
+              ${uomOptions(item.uom)}
+
+            </select>
+
+          </div>
+
+
+          <button
+            class="btn-danger"
+            onclick="removeItem(${index})"
+          >
+            Remove
+          </button>
+
+
+        </div>
+
+      </div>
+
+      `
+    ).join("");
+
+
+  $("totalQty").textContent =
+    fmt(
+      cart.reduce(
+        (sum, x) =>
+          sum +
+          Number(
+            x.qty || 0
+          ),
+        0
+      )
+    );
+
 }
+
+
+
+// ============================================================
+// UOM
+// ============================================================
 
 function uomOptions(selected) {
-  const common = ['EA','PCS','SET','BOX','ROLL','METER','LITER','KG'];
-  if (selected && !common.includes(selected)) common.unshift(selected);
-  return common.map(x => `<option value="${x}" ${x === selected ? 'selected' : ''}>${x}</option>`).join('');
+
+  const common = [
+
+    "EA",
+    "PCS",
+    "SET",
+    "BOX",
+    "ROLL",
+    "METER",
+    "LITER",
+    "KG"
+
+  ];
+
+
+  if (
+    selected &&
+    !common.includes(selected)
+  ) {
+
+    common.unshift(
+      selected
+    );
+  }
+
+
+  return common
+    .map(
+      x =>
+        `
+        <option
+          value="${x}"
+          ${
+            x === selected
+              ? "selected"
+              : ""
+          }
+        >
+          ${x}
+        </option>
+        `
+    )
+    .join("");
 }
 
-function changeQty(i, value) {
-  const q = Number(value);
-  if (!Number.isFinite(q) || q <= 0) return renderCart();
-  cart[i].qty = q;
+
+
+// ============================================================
+// CHANGE QUANTITY
+// ============================================================
+
+function changeQty(
+  i,
+  value
+) {
+
+  const q =
+    Number(value);
+
+
+  if (
+    !Number.isFinite(q) ||
+    q <= 0
+  ) {
+
+    renderCart();
+
+    return;
+  }
+
+
+  if (
+    q >
+    Number(cart[i].stock)
+  ) {
+
+    toast(
+      `Available stock: ${fmt(cart[i].stock)}`
+    );
+
+    renderCart();
+
+    return;
+  }
+
+
+  cart[i].qty =
+    q;
+
+
   renderCart();
+
 }
 
-function changeUom(i, value) {
-  cart[i].uom = value;
+
+
+// ============================================================
+// CHANGE UOM
+// ============================================================
+
+function changeUom(
+  i,
+  value
+) {
+
+  cart[i].uom =
+    value;
+
 }
+
+
+
+// ============================================================
+// REMOVE
+// ============================================================
 
 function removeItem(i) {
-  cart.splice(i, 1);
+
+  cart.splice(
+    i,
+    1
+  );
+
+
   renderCart();
+
 }
+
+
+
+// ============================================================
+// SUBMIT OUTPUT
+// ============================================================
 
 async function submitOutput() {
-  const receiver = $('receiver').value.trim();
-  const date = $('date').value;
-  const purpose = $('purpose').value.trim();
 
-  if (!receiver) return toast('Receiver name is required.');
-  if (!date) return toast('Date is required.');
-  if (!purpose) return toast('Purpose is required.');
-  if (!cart.length) return toast('Add at least one material.');
+  const receiver =
+    $("receiver")
+      .value
+      .trim();
 
-  const btn = $('submitBtn');
-  btn.textContent = 'Submitting...';
-  document.body.classList.add('loading');
 
-  try {
-    const payload = {
-      action: 'submitOutput',
-      receiver,
-      date,
-      purpose,
-      items: JSON.stringify(cart.map(x => ({
-        barcode: x.barcode,
-        nameEn: x.nameEn,
-        nameCn: x.nameCn,
-        qty: Number(x.qty),
-        uom: x.uom,
-        category: x.category,
-        warehouse: x.warehouse,
-        location: x.location,
-        partNo: x.partNo,
-        manufacturer: x.manufacturer
-      })))
-    };
+  const date =
+    $("date")
+      .value;
 
-    const res = await apiGet(payload);
-    if (!res || !res.success) {
-      throw new Error(res?.message || 'Submission failed.');
+
+  const purpose =
+    $("purpose")
+      .value
+      .trim();
+
+
+  // ----------------------------------------------------------
+  // VALIDATION
+  // ----------------------------------------------------------
+
+  if (!receiver) {
+
+    toast(
+      "Receiver name is required."
+    );
+
+    return;
+  }
+
+
+  if (!date) {
+
+    toast(
+      "Date is required."
+    );
+
+    return;
+  }
+
+
+  if (!purpose) {
+
+    toast(
+      "Purpose is required."
+    );
+
+    return;
+  }
+
+
+  if (!cart.length) {
+
+    toast(
+      "Add at least one material."
+    );
+
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // FRONTEND STOCK VALIDATION
+  // ----------------------------------------------------------
+
+  for (
+    const item of cart
+  ) {
+
+    if (
+      Number(item.qty) >
+      Number(item.stock)
+    ) {
+
+      toast(
+        `${item.nameEn}: Available stock is ${fmt(item.stock)}`
+      );
+
+      return;
     }
 
-    $('successCard').style.display = 'block';
-    $('successNumber').textContent = res.outputNo;
-    $('successText').textContent =
+  }
+
+
+  const btn =
+    $("submitBtn");
+
+
+  btn.textContent =
+    "Submitting...";
+
+
+  document.body
+    .classList
+    .add("loading");
+
+
+  try {
+
+
+    // --------------------------------------------------------
+    // PAYLOAD
+    // --------------------------------------------------------
+
+    const payload = {
+
+      action:
+        "submitOutput",
+
+      receiver:
+        receiver,
+
+      date:
+        date,
+
+      purpose:
+        purpose,
+
+      items:
+        JSON.stringify(
+
+          cart.map(
+            x => ({
+
+              barcode:
+                x.barcode,
+
+              nameEn:
+                x.nameEn,
+
+              nameCn:
+                x.nameCn,
+
+              qty:
+                Number(x.qty),
+
+              uom:
+                x.uom,
+
+              category:
+                x.category,
+
+              warehouse:
+                x.warehouse,
+
+              location:
+                x.location,
+
+              partNo:
+                x.partNo,
+
+              manufacturer:
+                x.manufacturer
+
+            })
+          )
+
+        )
+
+    };
+
+
+    // --------------------------------------------------------
+    // SEND TO GOOGLE APPS SCRIPT
+    // --------------------------------------------------------
+
+    const res =
+      await apiGet(
+        payload
+      );
+
+
+    // --------------------------------------------------------
+    // CHECK RESPONSE
+    // --------------------------------------------------------
+
+    if (
+      !res ||
+      res.success !== true
+    ) {
+
+      throw new Error(
+        res?.message ||
+        "Submission failed."
+      );
+    }
+
+
+    // --------------------------------------------------------
+    // SUCCESS
+    // --------------------------------------------------------
+
+    $("successCard")
+      .style
+      .display =
+      "block";
+
+
+    $("successNumber")
+      .textContent =
+      res.outputNo;
+
+
+    $("successText")
+      .textContent =
       `${res.itemCount} material line(s) submitted successfully.`;
-    $('successCard').scrollIntoView({ behavior: 'smooth' });
+
+
+    $("outputPreview")
+      .textContent =
+      `Last output: ${res.outputNo}`;
+
+
+    $("successCard")
+      .scrollIntoView({
+        behavior:
+          "smooth"
+      });
+
+
+    // Refresh material stock
+    loadMaterials();
+
 
   } catch (err) {
-    toast(err.message || String(err));
+
+    toast(
+      err.message ||
+      String(err)
+    );
+
+
   } finally {
-    document.body.classList.remove('loading');
-    btn.textContent = 'Submit Output';
+
+    document.body
+      .classList
+      .remove("loading");
+
+
+    btn.textContent =
+      "Submit Output";
+
   }
+
 }
+
+
+
+// ============================================================
+// NEW OUTPUT
+// ============================================================
 
 function newOutput() {
+
   cart = [];
-  $('receiver').value = '';
-  $('purpose').value = '';
-  $('date').value = getLocalDate();
-  $('successCard').style.display = 'none';
+
+
+  $("receiver")
+    .value = "";
+
+
+  $("purpose")
+    .value = "";
+
+
+  $("date")
+    .value =
+    getLocalDate();
+
+
+  $("barcode")
+    .value = "";
+
+
+  $("outputPreview")
+    .textContent =
+    "Next output will be generated on submit";
+
+
+  $("successCard")
+    .style
+    .display =
+    "none";
+
+
   renderCart();
+
+
   loadMaterials();
-  window.scrollTo({top:0, behavior:'smooth'});
+
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+
 }
 
-function setStatus(msg, ok) {
-  const el = $('scanStatus');
-  el.textContent = msg;
-  el.className = 'status' + (ok ? ' ok' : (ok === false ? ' err' : ''));
+
+
+// ============================================================
+// STATUS
+// ============================================================
+
+function setStatus(
+  msg,
+  ok
+) {
+
+  const el =
+    $("scanStatus");
+
+
+  el.textContent =
+    msg;
+
+
+  el.className =
+    "status" +
+    (
+      ok
+        ? " ok"
+        : (
+            ok === false
+              ? " err"
+              : ""
+          )
+    );
+
 }
+
+
+
+// ============================================================
+// TOAST
+// ============================================================
 
 function toast(msg) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  clearTimeout(window.__toast);
-  window.__toast = setTimeout(() => t.style.display = 'none', 2800);
+
+  const t =
+    $("toast");
+
+
+  t.textContent =
+    msg;
+
+
+  t.style.display =
+    "block";
+
+
+  clearTimeout(
+    window.__toast
+  );
+
+
+  window.__toast =
+    setTimeout(
+      () =>
+        t.style.display =
+          "none",
+      3000
+    );
+
 }
+
+
+
+// ============================================================
+// FORMAT
+// ============================================================
 
 function fmt(n) {
-  return Number(n || 0).toLocaleString(undefined, {maximumFractionDigits:3});
+
+  return Number(
+    n || 0
+  ).toLocaleString(
+    undefined,
+    {
+      maximumFractionDigits:3
+    }
+  );
+
 }
 
+
+
+// ============================================================
+// ESCAPE HTML
+// ============================================================
+
 function esc(v) {
-  return String(v ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
+
+  return String(
+    v ?? ""
+  ).replace(
+    /[&<>"']/g,
+    c => ({
+
+      "&":
+        "&amp;",
+
+      "<":
+        "&lt;",
+
+      ">":
+        "&gt;",
+
+      '"':
+        "&quot;",
+
+      "'":
+        "&#39;"
+
+    }[c])
+  );
+
 }
+
 </script>
+
 </body>
+
 </html>
