@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Warehouse Material Output</title>
+
+  <!-- Camera barcode scanner. -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --bg:#f1f5f9; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --primary:#0f172a; --accent:#2563eb; --danger:#dc2626; --success:#15803d;
+      --border:#e2e8f0; --soft:#f8fafc;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
+    .app { max-width:900px; margin:auto; padding:14px; }
+    .topbar { background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:18px; padding:18px; margin-bottom:14px; box-shadow:0 10px 30px rgba(15,23,42,.12); }
+    .topbar h1 { margin:0 0 4px; font-size:22px; }
+    .topbar p { margin:0; color:#cbd5e1; font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; margin-bottom:14px; box-shadow:0 5px 18px rgba(15,23,42,.05); }
+    label { display:block; font-size:12px; font-weight:700; color:#475569; margin:0 0 6px; }
+    input, select, textarea { width:100%; border:1px solid #cbd5e1; border-radius:12px; padding:12px 13px; font-size:16px; outline:none; background:#fff; color:var(--text); }
+    input:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field { margin-bottom:12px; }
+    .scanner-box { display:none; border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-top:12px; background:#000; }
+    #reader { width:100%; }
+    .scanner-actions { display:flex; gap:8px; margin-top:10px; }
+    button { border:0; border-radius:12px; padding:12px 15px; font-weight:800; font-size:14px; cursor:pointer; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-dark { background:var(--primary); color:#fff; }
+    .btn-light { background:#e2e8f0; color:#0f172a; }
+    .btn-danger { background:#fee2e2; color:#991b1b; }
+    .scan-row { display:grid; grid-template-columns:1fr auto; gap:8px; }
+    .status { margin-top:9px; font-size:13px; color:var(--muted); min-height:18px; }
+    .status.ok { color:var(--success); font-weight:700; }
+    .status.err { color:var(--danger); font-weight:700; }
+    .output-pill { display:inline-flex; align-items:center; gap:8px; background:#eff6ff; color:#1d4ed8; padding:8px 11px; border-radius:999px; font-weight:800; font-size:13px; }
+    .cart-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+    .cart-head h2 { margin:0; font-size:18px; }
+    .cart-empty { padding:22px 10px; text-align:center; color:var(--muted); border:1px dashed #cbd5e1; border-radius:14px; }
+    .item { border:1px solid var(--border); border-radius:15px; padding:12px; margin-bottom:10px; background:#fff; }
+    .item-title { font-weight:800; font-size:15px; line-height:1.35; }
+    .item-sub { color:var(--muted); font-size:12px; margin-top:4px; }
+    .item-meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .tag { background:var(--soft); border:1px solid var(--border); padding:5px 7px; border-radius:8px; font-size:11px; color:#475569; }
+    .item-controls { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-top:10px; align-items:end; }
+    .item-controls button { height:45px; }
+    .summary { display:flex; justify-content:space-between; align-items:center; padding-top:8px; font-size:14px; }
+    .submit { width:100%; padding:15px; font-size:16px; margin-top:10px; }
+    .hidden { display:none !important; }
+    .loading { opacity:.65; pointer-events:none; }
+    .toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0f172a; color:#fff; padding:12px 15px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.2); display:none; z-index:20; max-width:90%; text-align:center; }
+    .success-card { display:none; text-align:center; }
+    .success-card h2 { color:var(--success); margin:4px 0 6px; }
+    .success-number { font-size:34px; font-weight:900; margin:8px 0 16px; }
+    @media (max-width:600px) {
+      .app { padding:10px; }
+      .grid { grid-template-columns:1fr; gap:0; }
+      .topbar { border-radius:15px; }
+      .card { border-radius:15px; padding:13px; }
+      .scan-row { grid-template-columns:1fr; }
+      .scanner-actions { display:grid; grid-template-columns:1fr 1fr; }
+      .item-controls { grid-template-columns:1fr 1fr; }
+      .item-controls button { grid-column:1 / -1; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <header class="topbar">
+    <h1>Warehouse Material Output</h1>
+    <p>Scan barcode → add material → enter quantity → submit output</p>
+  </header>
+
+  <section class="card">
+    <div class="field">
+      <label>Output Number</label>
+      <div class="output-pill" id="outputPreview">Next output will be generated on submit</div>
+    </div>
+
+    <div class="grid">
+      <div class="field">
+        <label for="receiver">Receiver Name *</label>
+        <input id="receiver" placeholder="Enter receiver name" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="date">Date *</label>
+        <input id="date" type="date">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="purpose">Purpose *</label>
+      <textarea id="purpose" rows="2" placeholder="e.g. Rig maintenance / Well job / Workshop"></textarea>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="field">
+      <label>Barcode</label>
+      <div class="scan-row">
+        <input id="barcode" inputmode="numeric" placeholder="Scan or enter barcode" autocomplete="off">
+        <button class="btn-primary" onclick="toggleScanner()">📷 Scan</button>
+      </div>
+      <div id="scannerBox" class="scanner-box">
+        <div id="reader"></div>
+        <div class="scanner-actions">
+          <button class="btn-light" onclick="stopScanner()">Close Scanner</button>
+          <button class="btn-dark" onclick="focusBarcode()">Keyboard Input</button>
+        </div>
+      </div>
+      <div id="scanStatus" class="status"></div>
+    </div>
+    <button class="btn-dark" style="width:100%" onclick="addByBarcode()">＋ Add Material</button>
+  </section>
+
+  <section class="card">
+    <div class="cart-head">
+      <h2>Output Cart</h2>
+      <span id="cartCount" class="output-pill">0 items</span>
+    </div>
+    <div id="cart"></div>
+    <div class="summary">
+      <strong>Total Quantity</strong>
+      <strong id="totalQty">0</strong>
+    </div>
+    <button id="submitBtn" class="btn-primary submit" onclick="submitOutput()">Submit Output</button>
+  </section>
+
+  <section id="successCard" class="card success-card">
+    <h2>Output Submitted</h2>
+    <div class="success-number" id="successNumber"></div>
+    <p id="successText"></p>
+    <button class="btn-dark" onclick="newOutput()">Create New Output</button>
+  </section>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let materials = [];
+let byBarcode = {};
+let cart = [];
+let scanner = null;
+let scannerRunning = false;
+
+const $ = id => document.getElementById(id);
+
+document.addEventListener('DOMContentLoaded', () => {
+  $('date').value = new Date().toISOString().slice(0,10);
+  $('barcode').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addByBarcode();
+  });
+  loadMaterials();
+});
+
+function loadMaterials() {
+  setStatus('Loading material database...');
+  google.script.run
+    .withSuccessHandler(data => {
+      materials = data || [];
+      byBarcode = {};
+      materials.forEach(m => { if (m.barcode) byBarcode[String(m.barcode)] = m; });
+      setStatus(`${materials.length} material records loaded.`, true);
+    })
+    .withFailureHandler(err => setStatus(err.message || String(err), false))
+    .getMaterials();
+}
+
+async function toggleScanner() {
+  if (scannerRunning) {
+    stopScanner();
+    return;
+  }
+
+  $('scannerBox').style.display = 'block';
+
+  if (!window.Html5Qrcode) {
+    setStatus('Scanner library load nahi hui. Internet check karein.', false);
+    return;
+  }
+
+  try {
+    setStatus('Camera permission checking...');
+
+    // Explicitly request camera access
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' }
+      },
+      audio: false
+    });
+
+    // Permission mil gayi — immediately release test stream
+    stream.getTracks().forEach(track => track.stop());
+
+    setStatus('Camera permission mil gayi. Scanner starting...', true);
+
+    scanner = new Html5Qrcode('reader');
+
+    await scanner.start(
+      {
+        facingMode: 'environment'
+      },
+      {
+        fps: 10,
+        qrbox: {
+          width: 280,
+          height: 140
+        },
+        aspectRatio: 1.777
+      },
+      decodedText => {
+        $('barcode').value = decodedText;
+        stopScanner();
+        addByBarcode();
+      },
+      errorMessage => {
+        // Normal scanning errors ignore karna hai
+      }
+    );
+
+    scannerRunning = true;
+
+    setStatus(
+      'Camera active hai. Barcode ke saamne camera rakhein.',
+      true
+    );
+
+  } catch (err) {
+
+    console.error('Camera error:', err);
+
+    let message = 'Camera start nahi ho saka. ';
+
+    if (err.name === 'NotAllowedError') {
+      message +=
+        'Camera permission blocked hai. Browser settings me Camera → Allow karein.';
+    } 
+    else if (err.name === 'NotFoundError') {
+      message +=
+        'Camera device nahi mila.';
+    } 
+    else if (err.name === 'NotReadableError') {
+      message +=
+        'Camera kisi aur application me use ho raha hai.';
+    } 
+    else if (err.name === 'SecurityError') {
+      message +=
+        'Browser security ne camera access block kiya hai.';
+    } 
+    else {
+      message += err.name + ': ' + (err.message || 'Unknown error');
+    }
+
+    setStatus(message, false);
+  }
+}
+async function stopScanner() {
+
+  try {
+    if (scanner) {
+
+      if (scannerRunning) {
+        await scanner.stop();
+      }
+
+      scanner.clear();
+      scanner = null;
+      scannerRunning = false;
+    }
+  } catch (err) {
+    console.log('Scanner stop error:', err);
+  }
+
+  $('scannerBox').style.display = 'none';
+}
+
+function focusBarcode() { $('barcode').focus(); }
+
+function addByBarcode() {
+  const code = String($('barcode').value || '').trim();
+  if (!code) {
+    setStatus('Please scan or enter a barcode.', false);
+    return;
+  }
+  const material = byBarcode[code];
+  if (!material) {
+    setStatus(`Barcode not found: ${code}`, false);
+    return;
+  }
+
+  const existing = cart.find(x => x.barcode === material.barcode);
+  if (existing) {
+    existing.qty = Number(existing.qty) + 1;
+  } else {
+    cart.push({
+      ...material,
+      qty: 1,
+      uom: material.uom || 'EA'
+    });
+  }
+
+  $('barcode').value = '';
+  setStatus(`${material.nameEn} added to cart.`, true);
+  renderCart();
+}
+
+function renderCart() {
+  $('cartCount').textContent = `${cart.length} item${cart.length === 1 ? '' : 's'}`;
+
+  if (!cart.length) {
+    $('cart').innerHTML = '<div class="cart-empty">No materials added yet.<br>Scan a barcode to start.</div>';
+    $('totalQty').textContent = '0';
+    return;
+  }
+
+  $('cart').innerHTML = cart.map((item, index) => `
+    <div class="item">
+      <div class="item-title">${esc(item.nameEn)}</div>
+      <div class="item-sub">${esc(item.nameCn || '')}</div>
+      <div class="item-meta">
+        <span class="tag">Barcode: ${esc(item.barcode)}</span>
+        <span class="tag">Stock: ${fmt(item.stock)}</span>
+        <span class="tag">${esc(item.category)}</span>
+        <span class="tag">Loc: ${esc(item.location)}</span>
+      </div>
+      <div class="item-controls">
+        <div>
+          <label>Qty</label>
+          <input type="number" min="0.001" step="any" value="${item.qty}" onchange="changeQty(${index}, this.value)">
+        </div>
+        <div>
+          <label>UOM</label>
+          <select onchange="changeUom(${index}, this.value)">
+            ${uomOptions(item.uom)}
+          </select>
+        </div>
+        <button class="btn-danger" onclick="removeItem(${index})">Remove</button>
+      </div>
+    </div>
+  `).join('');
+
+  $('totalQty').textContent = fmt(cart.reduce((s,x) => s + Number(x.qty || 0), 0));
+}
+
+function uomOptions(selected) {
+  const common = ['EA','PCS','SET','BOX','ROLL','METER','LITER','KG'];
+  if (selected && !common.includes(selected)) common.unshift(selected);
+  return common.map(x => `<option value="${x}" ${x === selected ? 'selected' : ''}>${x}</option>`).join('');
+}
+
+function changeQty(i, value) {
+  const q = Number(value);
+  if (!Number.isFinite(q) || q <= 0) return renderCart();
+  cart[i].qty = q;
+  renderCart();
+}
+
+function changeUom(i, value) {
+  cart[i].uom = value;
+}
+
+function removeItem(i) {
+  cart.splice(i, 1);
+  renderCart();
+}
+
+function submitOutput() {
+  const receiver = $('receiver').value.trim();
+  const date = $('date').value;
+  const purpose = $('purpose').value.trim();
+
+  if (!receiver) return toast('Receiver name is required.');
+  if (!date) return toast('Date is required.');
+  if (!purpose) return toast('Purpose is required.');
+  if (!cart.length) return toast('Add at least one material.');
+
+  const btn = $('submitBtn');
+  btn.textContent = 'Submitting...';
+  document.body.classList.add('loading');
+
+  google.script.run
+    .withSuccessHandler(res => {
+      document.body.classList.remove('loading');
+      btn.textContent = 'Submit Output';
+      if (!res || !res.ok) return toast('Submission failed.');
+      $('successCard').style.display = 'block';
+      $('successNumber').textContent = res.outputNo;
+      $('successText').textContent = `${res.itemCount} material line(s) submitted successfully.`;
+      $('successCard').scrollIntoView({behavior:'smooth'});
+    })
+    .withFailureHandler(err => {
+      document.body.classList.remove('loading');
+      btn.textContent = 'Submit Output';
+      toast(err.message || String(err));
+    })
+    .submitOutput({
+      receiver,
+      date,
+      purpose,
+      items: cart.map(x => ({
+        barcode:x.barcode, nameEn:x.nameEn, nameCn:x.nameCn,
+        qty:Number(x.qty), uom:x.uom, category:x.category,
+        warehouse:x.warehouse, location:x.location,
+        partNo:x.partNo, manufacturer:x.manufacturer
+      }))
+    });
+}
+
+function newOutput() {
+  cart = [];
+  $('receiver').value = '';
+  $('purpose').value = '';
+  $('date').value = new Date().toISOString().slice(0,10);
+  $('successCard').style.display = 'none';
+  renderCart();
+  loadMaterials();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function setStatus(msg, ok) {
+  const el = $('scanStatus');
+  el.textContent = msg;
+  el.className = 'status' + (ok ? ' ok' : (ok === false ? ' err' : ''));
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window.__toast);
+  window.__toast = setTimeout(() => t.style.display = 'none', 2800);
+}
+
+function fmt(n) {
+  return Number(n || 0).toLocaleString(undefined, {maximumFractionDigits:3});
+}
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+</script>
+</body>
+</html>
